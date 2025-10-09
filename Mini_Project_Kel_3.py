@@ -1,7 +1,7 @@
 # This is the big_string of PRODUCTS, Weird but it has to be a fixed length,
 # each row must be 25 characters long, ended with \n, this is to enable line jumping reliably
 #.-.-.-.-.-.-.-.-.-.-.-.! <- EACH LINE MUST BE THIS LONG EXACTLY !!! USE "*" as filler
-PRODUCTS = f'''
+PRODUCTS = '''
 -Chatito.10500|0:10******
 -El Minerale.3800|0:10***
 -ReeCheez.11300|0:10*****
@@ -27,7 +27,7 @@ product_count = count_lines(PRODUCTS)
 if (len(PRODUCTS) - product_count) % 25 != 0 :
     float("CAUTION !!! THE PRODUCT big_string IS INVALID !!!")
 # ------------------------------------------------ THIS IS THE BANK TO STORE THE MACHINE"S CASH
-BANK_IDR = f'''
+BANK_IDR = '''
 -Rp.100_000:000**********
 -Rp.50_000:000***********
 -Rp.20_000:000***********
@@ -40,7 +40,7 @@ BANK_IDR = f'''
 -Rp.100:100**************
 '''
 # Notice SGD is stored in cents to avoid decimals because the machine's processes work best with integers
-BANK_SGD = f'''
+BANK_SGD = '''
 -$.100_00:000************
 -$.50_00:000*************
 -$.10_00:000*************
@@ -55,15 +55,26 @@ BANK_SGD = f'''
 '''
 idr_count = count_lines(BANK_IDR) # stores how many IDR banknotes we gonna use
 sgd_count = count_lines(BANK_SGD) # stores how many SGD banknotes we gonna use
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET ANY LINE FROM A BIG STRING
+def get_line(line, big_string):
+    data_buffer = '' # to store each character
+    i = line + ((line-1)*25) # enables smart line jumping... tho sensitive...
+    while (True):
+        if big_string[i] == '*': # only return after it meets '*'
+            return data_buffer + '*'
+        data_buffer += big_string[i]
+        i += 1
+
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> EXTRACT DATA BETWEEN 2 SEPARATORS
-def read_data(product, separator1, separator2):
+def read_data(product_line, separator1, separator2):
     extracted_data = ''
     x = 0 # this is just to count string index
-    for i in product:
+    for i in product_line:
         if i == separator1: # START EXTRACTION
             x += 1 # skip the first separator1
-            while product[x] != separator2: # EXTRACT UNTIL product[x] is the second separator2
-                extracted_data += product[x]
+            while product_line[x] != separator2: # EXTRACT UNTIL product[x] is the second separator2
+                extracted_data += product_line[x]
                 x += 1
             # After successful data extraction, RETURN
             return extracted_data
@@ -71,22 +82,22 @@ def read_data(product, separator1, separator2):
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WRITE DATA BETWEEN 2 SEPARATORS
-def write_data(product, separator1, value, separator2):
+def write_data(product_line, separator1, value, separator2):
     updated_product = '' # a buffer for the updated product
     value = str(value) # make sure value is a string
 
     x = 0 # this is just to count string index
     # This for loop is just for copying the chars before seperator1
     # Until it finds separator 1 then proceed injecting
-    for i in product:
+    for i in product_line:
         if i == separator1: # START WRITING
             updated_product += i + value # add the separator1 i then add the whole value
             # This skips the characters that are replaced by the value
-            while product[x] != separator2:
+            while product_line[x] != separator2:
                 x += 1
             # add the rest of the original data that is unchanged
-            while product[x] != '*':
-                updated_product += product[x]
+            while product_line[x] != '*':
+                updated_product += product_line[x]
                 x += 1
             # After successful writing, BREAK out of the for loop, no longer needed
             break
@@ -102,17 +113,6 @@ def write_data(product, separator1, value, separator2):
     # after writing the updated_product can be less than 25 chars so gotta add fillers
     updated_product = updated_product + ('*' * (25 - length)) if length < 25 else updated_product
     return updated_product + '\n' # FINALLY
-
-
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET ANY LINE FROM A BIG STRING
-def get_line(line, big_string):
-    data_buffer = '' # to store each character
-    i = line + ((line-1)*25) # enables smart line jumping... tho sensitive...
-    while (True):
-        if big_string[i] == '*': # only return after it meets '*'
-            return data_buffer + '*'
-        data_buffer += big_string[i]
-        i += 1
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -183,7 +183,7 @@ def get_choice(): # WILSON
                 break # break the FOR LOOP since only one invalidity is all it takes to break the program
         
         # if text is not an empty input AND valid AND its a choice in the options
-        if valid and 0 < int(text) < product_count:
+        if text and valid and 0 < int(text) < product_count:
             choice = int(text)
             # CHECK IF THIS CHOSEN PRODUCT IS STILL IN STOCK
             if int(read_data(get_line(choice, PRODUCTS), ':', '*')) < 1 :

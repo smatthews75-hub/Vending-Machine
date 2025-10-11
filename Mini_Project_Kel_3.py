@@ -1,19 +1,45 @@
 # This is the big_string of PRODUCTS, Weird but it has to be a fixed length,
-# each row must be 25 characters long, ended with \n, this is to enable line jumping reliably
+# each row must be product_line_length characters long, ended with \n, this is to enable line jumping reliably
 #.-.-.-.-.-.-.-.-.-.-.-.! <- EACH LINE MUST BE THIS LONG EXACTLY !!! USE "*" as filler
 PRODUCTS = '''
--Chatito.10500|0:10******
--El Minerale.3800|0:10***
--ReeCheez.11300|0:10*****
--SUPER FOOD.24700|0:10***
--Cola Coca.5000|0:10*****
--Deez Peas.12300|0:10****
--GiGaGlizzy.12400|0:10***
+-Chatito.10500|0:10*
+-El Minerale.3800|0:10*
+-ReeCheez.11300|0:10*
+-SUPER FOOD.24700|000:10*
+-Cola Coca.5000|0:10*
+-Deez Peas.12300|0:10*
+-GiGaGlizzy.12400|0:10*
 '''
 DEFAULT_PRODUCT_STOCK = 5 # THIS IS TO SET THE DEFAULT STOCK OF EVERY PRODUCT ITEM # TWEAK HERE !
 DEFAULT_MONEY_STOCK = 100 # THIS IS TO SET THE DEFAULT STOCK OF THE PHYSICAL MONEY # TWEAK HERE !
 # say $1 SGD dollar is Rp.12,800 IDR would be :
 SGD_to_IDR_ratio = 128.0 # 1 SGD cent is 128 IDR # CHANGE THE RATIO HERE !!!!!!!!!!!!!!!!!!!!!!!!
+# ---------------------------------------------------------------------------------------------
+def prepare(big_string):
+    lines = 0 # HOW MANY LINES INSIDE big_string this will be one extra for range(end) is exclusive
+    longest = 0 # get the longest line
+    char_count = 0
+    for i in big_string:
+        if i == '\n': # everytime it meets a line ending
+            lines += 1 # count as one line of PRODUCTS
+            if char_count > longest: # if this line has more characters
+                longest = char_count # make this line as the longest
+            char_count = 0 # reset the character counter
+            continue # dont count newlines '\n'
+        char_count += 1 # increment to count characters
+    # now that we found the longest line, reconstruct the big_string to have all lines be just as long
+    NEW = '\n'
+    collect = ''
+    for i in big_string:
+        if i != '\n':
+            collect += i
+        else:
+            current_length = len(collect) # that if current_length > 0 else '' is just for the case of the first \n in the big_string
+            NEW += collect + ('*' * (longest - current_length)) + i if current_length > 0 else ''
+            collect = ''
+    return NEW, lines, longest
+PRODUCTS, product_count, product_line_length = prepare(PRODUCTS) # product_count stores how many PRODUCTS we have
+print(PRODUCTS)
 # ---------------------------------------------------------------------------------------------
 def count_lines(big_string): # THIS IS TO GIVE COUNT OF HOW MANY ITEMS IN THESE BIG STRINGS
     j = 0
@@ -21,11 +47,9 @@ def count_lines(big_string): # THIS IS TO GIVE COUNT OF HOW MANY ITEMS IN THESE 
         if i == '\n':
             j += 1
     return j
-# product_count stores how many PRODUCTS we have
-product_count = count_lines(PRODUCTS)
 # product_count will be +1 extra but this can be taken advantage since range(end) is exclusive!
 # next this checks if the product big_string is valid or not... this is just in case we made an error
-if (len(PRODUCTS) - product_count) % 25 != 0 :
+if (len(PRODUCTS) - product_count) % product_line_length != 0 :
     float("CAUTION !!! THE PRODUCT big_string IS INVALID !!!")
 # ------------------------------------------------ THIS IS THE BANK TO STORE THE MACHINE"S CASH
 BANK_IDR = '''
@@ -54,12 +78,14 @@ BANK_SGD = '''
 -$.5:100*****************
 -$.1:100*****************
 '''
+IDR_line_length = 25
+SGD_line_length = 25
 idr_count = count_lines(BANK_IDR) # stores how many IDR banknotes we gonna use
 sgd_count = count_lines(BANK_SGD) # stores how many SGD banknotes we gonna use
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET ANY LINE FROM A BIG STRING
-def get_line(line, big_string):
+def get_line(line, big_string, big_length):
     data_buffer = '' # to store each character
-    i = line + ((line-1)*25) # enables smart line jumping... tho sensitive...
+    i = line + ((line-1)*big_length) # enables smart line jumping... tho sensitive...
     while (True):
         if big_string[i] == '*': # only return after it meets '*'
             return data_buffer + '*'
@@ -83,7 +109,7 @@ def read_data(product_line, separator1, separator2):
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> WRITE DATA BETWEEN 2 SEPARATORS
-def write_data(product_line, separator1, value, separator2):
+def write_data(product_line, big_length, separator1, value, separator2):
     updated_product = '' # a buffer for the updated product
     value = str(value) # make sure value is a string
 
@@ -106,42 +132,43 @@ def write_data(product_line, separator1, value, separator2):
             updated_product += i
         x += 1
 
-    # check if the updated product became more than the 25 char limit
+    # check if the updated product became more than the big_length char limit
     length = len(updated_product)
-    if length > 25:
+    if length > big_length:
         print(updated_product)
-        float("VALUE IS TOO LARGE, THE WHOLE PRODUCT LINE EXCEEDS 25")
-    # after writing the updated_product can be less than 25 chars so gotta add fillers
-    updated_product = updated_product + ('*' * (25 - length)) if length < 25 else updated_product
+        float("VALUE IS TOO LARGE, THE WHOLE PRODUCT LINE EXCEEDS big_length")
+    # after writing the updated_product can be less than big_length chars so gotta add fillers
+    updated_product = updated_product + ('*' * (big_length - length)) if length < big_length else updated_product
     return updated_product + '\n' # FINALLY
 
 
 # ---------------------------------------------------------------------------------------------------
 NEW = '\n' # start with a newline sequence like the original
 for i in range(1, product_count):
-    IDR_value = float(read_data(get_line(i, PRODUCTS), '.', '|'))
+    line = get_line(i, PRODUCTS, product_line_length)
+    IDR_value = float(read_data(line, '.', '|'))
     SGD_value = round(IDR_value / SGD_to_IDR_ratio)
     # write the SGD_value as the new data to update PRODUCTS
-    # NEW += write_data(get_line(i, PRODUCTS), '|', SGD_value, ':') # >>>>>>>>>>>>>>>>>>>> SWAP WITH THIS AND GET RID BELOW TO ENABLE MANUALLY SETTING THE STOCK
-    defined_sgd = write_data(get_line(i, PRODUCTS), '|', SGD_value, ':')
+    # NEW += write_data(line, '|', SGD_value, ':') # >>>>>>>>>>>>>>>>>>>> SWAP WITH THIS AND GET RID BELOW TO ENABLE MANUALLY SETTING THE STOCK
+    defined_sgd = write_data(line, product_line_length, '|', SGD_value, ':')
     # with the defined SGD now write the default product stock
-    NEW += write_data(defined_sgd, ':', DEFAULT_PRODUCT_STOCK,'*')
+    NEW += write_data(defined_sgd, product_line_length, ':', DEFAULT_PRODUCT_STOCK,'*')
 PRODUCTS = NEW # >>>>>>>>>>>>>>>>>>>>>>>>>>>>> THIS OUTRIGHT REPLACES THE OLD PRODUCTS WITH THE UPDATED NEW
 
 idr_initial = 0 # store the initial total in the bank for BUSINESS REPORT AT THE VERY END
 NEW = '\n' # Reset the NEW buffer to store updated Bank IDR
 for i in range(1, idr_count):
-    line = get_line(i, BANK_IDR)
+    line = get_line(i, BANK_IDR, IDR_line_length)
     idr_initial += int(read_data(line, '.', ':')) * DEFAULT_MONEY_STOCK
-    NEW += write_data(line, ':', DEFAULT_MONEY_STOCK, '*')
+    NEW += write_data(line, IDR_line_length, ':', DEFAULT_MONEY_STOCK, '*')
 BANK_IDR = NEW # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REPLACE the manually set bank stocks with the NEW bank stocks set to default
 
 sgd_initial = 0 # store the initial total in the bank for BUSINESS REPORT AT THE VERY END
 NEW = '\n' # Reset again to store Bank SGD
 for i in range(1, sgd_count):
-    line = get_line(i, BANK_SGD)
+    line = get_line(i, BANK_SGD, SGD_line_length)
     sgd_initial += int(read_data(line, '.', ':')) * DEFAULT_MONEY_STOCK
-    NEW += write_data(line, ':', DEFAULT_MONEY_STOCK, '*')
+    NEW += write_data(line, SGD_line_length, ':', DEFAULT_MONEY_STOCK, '*')
 BANK_SGD = NEW # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REPLACE the manually set bank stocks with the NEW bank stocks set to default
 # print(PRODUCTS)
 # print(BANK_IDR)
@@ -157,7 +184,7 @@ def print_price(value, currency):
 def display_menu():
     print("\n\n_-*_-*< Vending Machine >*-_*-_")
     for i in range(1, product_count):
-        product = get_line(i, PRODUCTS) # get the line of the product !
+        product = get_line(i, PRODUCTS, product_line_length) # get the line of the product !
         name = read_data(product, '-', '.')  # get the name of the current data
         price = int(read_data(product, '.', '|')) # get the price of the current data
 
@@ -187,7 +214,7 @@ def get_choice(): # WILSON
         if text and valid and 0 < int(text) < product_count:
             choice = int(text)
             # CHECK IF THIS CHOSEN PRODUCT IS STILL IN STOCK
-            if int(read_data(get_line(choice, PRODUCTS), ':', '*')) < 1 :
+            if int(read_data(get_line(choice, PRODUCTS, product_line_length), ':', '*')) < 1 :
                 print("Unfortunately that product is out of stock, sorry :(\nCan we interest you in anything else ? ")
                 continue # RESTART THE PROCESS
             return choice
@@ -200,7 +227,7 @@ def retry_purchase(error_message):
     return True if input("Do you want to retry purchase ? (y/n) ") in 'YESyesYes' else False
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> CHARGE PAYMENT WARNING THIS IS A HUGE FUNCTION
 def charge_payment(choice):
-    line = get_line(choice, PRODUCTS)
+    line = get_line(choice, PRODUCTS, product_line_length)
     name = read_data(line, '-', '.')
     billing_IDR = int(read_data(line, '.', '|'))
     billing_SGD = int(read_data(line, '|', ':'))
@@ -246,7 +273,8 @@ def charge_payment(choice):
             # MUST MAKE SURE ITS IN REPRESENTABLE WITH THE EXISTING BANKNOTES
             last_line = idr_count - 1 if text == 'IDR' else sgd_count - 1
             selected_bank = BANK_IDR if text == 'IDR' else BANK_SGD
-            smallest = int(read_data(get_line(last_line, selected_bank), '.', ':'))
+            line_length = IDR_line_length if text == 'IDR' else SGD_line_length
+            smallest = int(read_data(get_line(last_line, selected_bank, line_length), '.', ':'))
             if pay % smallest != 0:
                 if retry_purchase(f"{pay} is not representable by the smallest banknote value of {smallest}"):
                     continue
@@ -268,12 +296,12 @@ def accounting(money, currency_type, refund, str):
     # get the bank and its size based from the currency type
     bank = BANK_IDR if currency_type == 'IDR' else BANK_SGD
     size = idr_count if currency_type == 'IDR' else sgd_count
-
+    line_length = IDR_line_length if currency_type == 'IDR' else SGD_line_length
     print(f"{str} : ", end='') # SHOW WHAT's HAPPENING
 
     # Go through each currency value of the selected bank
     for i in range(1, size):
-        line = get_line(i, bank) # get the data from the bank
+        line = get_line(i, bank, line_length) # get the data from the bank
         # get info of each bank_note value and its stock
         bank_note = int(read_data(line, '.', ':'))
         bank_note_stock = int(read_data(line, ':', '*'))
@@ -291,7 +319,7 @@ def accounting(money, currency_type, refund, str):
             print(f'{new_bills} x {bill_str} | ', end='')
             money = money % bank_note # here update money to be the remainder of what can be divided by bank_note's value
         # if new_bills > 0 then this updates the NEW big_string, otherwise it stays the same
-        NEW += write_data(line, ':', bank_note_stock, '*')
+        NEW += write_data(line, line_length, ':', bank_note_stock, '*')
 
     print() # a newline since that print up there has end=''
     return NEW # return the new and updated big_string
@@ -300,8 +328,9 @@ def accounting(money, currency_type, refund, str):
 def can_return_change(prediction, currency_type):
     bank = BANK_IDR if currency_type == 'IDR' else BANK_SGD
     size = idr_count if currency_type == 'IDR' else sgd_count
+    line_length = IDR_line_length if currency_type == 'IDR' else SGD_line_length
     for i in range(1, size):
-        line = get_line(i, bank)
+        line = get_line(i, bank, line_length)
         bank_note_stock = int(read_data(line, ':', '*')) # get the stock of this banknote
         bank_note = int(read_data(line, '.', ':')) # get the value of this banknote
 
@@ -323,11 +352,11 @@ def take_out(choice):
     # PRODUCTS IS A STRING WHICH PYTHON SAYS ITS IMMUTABLE SO IMMA MAKE A WHOLE NEW COPY
     NEW = '\n' # this is just a buffer for the whole process
     for i in range(1, product_count):
-        line = get_line(i, PRODUCTS) # get the chosen product's line
+        line = get_line(i, PRODUCTS, product_line_length) # get the chosen product's line
         stock = int(read_data(line, ':', '*')) # get its stock
         if i == choice:
             stock -= 1 # only decrease the stock of the product taken away
-        NEW += write_data(line, ':', stock, '*')
+        NEW += write_data(line, product_line_length, ':', stock, '*')
     return NEW
 
 
@@ -375,7 +404,7 @@ while True:
 WE HEREBY PRESENT YOU
 
   ::____________::
-  ::{read_data(get_line(choice, PRODUCTS), '-', '.'):^12}::
+  ::{read_data(get_line(choice, PRODUCTS, product_line_length), '-', '.'):^12}::
   ::************::
 
 <THY PAID CONSUMABLE>''')
@@ -394,10 +423,12 @@ print(PRODUCTS)
 idr_stonks = 0
 sgd_stonks = 0
 for i in range(1, idr_count):
-    idr_stonks += int(read_data(get_line(i, BANK_IDR), '.', ':')) * int(read_data(get_line(i, BANK_IDR), ':', '*'))
+    line = get_line(i, BANK_IDR, IDR_line_length)
+    idr_stonks += int(read_data(line, '.', ':')) * int(read_data(line, ':', '*'))
 
 for i in range(1, sgd_count):
-    sgd_stonks += int(read_data(get_line(i, BANK_SGD), '.', ':')) * int(read_data(get_line(i, BANK_SGD), ':', '*'))
+    line = get_line(i, BANK_SGD, SGD_line_length)
+    sgd_stonks += int(read_data(line, '.', ':')) * int(read_data(line, ':', '*'))
 idr_profit = idr_stonks - idr_initial
 sgd_profit = sgd_stonks - sgd_initial
 print('-------------------------------------------------------')

@@ -1,6 +1,11 @@
-# Vending Machine Mini Project
-### A python CLI application for university issued mini project
-### C.L.I stands for Command Line Interface, this CLI application will be using the terminal as the user interaction medium to receive and display information.
+# Vending Machine Mini Project (upgraded version)
+### A python CLI application. This is an upgraded version of the vending machine program from branch `main`
+
+This version features the lifted restriction of the 25 characters only for the big_string structure, allowing 'Owners' of the vending machine to add any product of any length - as long as it has the correct order and format of data fields.  
+
+This version still holds true to the original requirements of the vending machine project, and is an improvement on the original codebase. 
+
+We are aware that many of the code implementation in this project can be improved, we have considered many ways to improve efficiency and effectiveness of the source code. However, maintaining compliance with the requirements of only making use of material already covered in lectures, this is as far as the project goes. We are open to suggestions and improvements, we express our utmost gratitude, thank you.
 
 ## Presented by Team 3 : 
 - Stephen Matthews (252404175)
@@ -30,5 +35,4 @@ Or web based alternative through github codespaces with the `Python 3.12` devcon
 > Realistically, the machine would also have a limited amount of banknotes to give change to the customer. So the stock of how much banknotes the machine has is also tracked and can be set in the source code dynamically.
 ---
 ## Additional Notes
-- An in depth explanation of the whole structure of this program can be found in the `Source-Code-Breakdown.ipynb` file in this repository.
 - This project is made for educational purposes only, and is not intended for commercial use. We don't even think it is useful in any commercial way. This program is not made to be connected to any hardware, and is only a simulation of how a vending machine works.

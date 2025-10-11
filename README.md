@@ -2,7 +2,7 @@
 ### A python CLI application for university issued mini project
 ### C.L.I stands for Command Line Interface, this CLI application will be using the terminal as the user interaction medium to receive and display information.
 
-Note: an upgraded version of this program is available in the `fix-major-flaws` branch of this repository.
+Note: an **upgraded version** of this program is available in the `upgrades` branch of this repository. It features a solution to a major limitation of this version whilst maintaining performance. However, at the cost of slight increase of complexity on top of what already is, it is decided that this upgraded version will not be merged into the main branch, and will be left as a separate branch for reference.
 
 ## Presented by Team 3 : 
 - Stephen Matthews (252404175)

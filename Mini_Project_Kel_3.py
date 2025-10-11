@@ -1,3 +1,5 @@
+# This is the original source code of team 3, may call it a vending machine simulator.
+
 # This is the big_string of PRODUCTS, Weird but it has to be a fixed length,
 # each row must be 25 characters long, ended with \n, this is to enable line jumping reliably
 #.-.-.-.-.-.-.-.-.-.-.-.! <- EACH LINE MUST BE THIS LONG EXACTLY !!! USE "*" as filler

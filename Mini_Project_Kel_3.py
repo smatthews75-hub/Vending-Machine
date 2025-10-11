@@ -2,19 +2,49 @@
 # each row must be product_line_length characters long, ended with \n, this is to enable line jumping reliably
 #.-.-.-.-.-.-.-.-.-.-.-.! <- EACH LINE MUST BE THIS LONG EXACTLY !!! USE "*" as filler
 PRODUCTS = '''
--Chatito.10500|0:10*
--El Minerale.3800|0:10*
--ReeCheez.11300|0:10*
--SUPER FOOD.24700|000:10*
--Cola Coca.5000|0:10*
--Deez Peas.12300|0:10*
--GiGaGlizzy.12400|0:10*
+-MAXIMALLY LONG-NAMED PRODUCT.200000|00000:100*
+-Chatito.10500|0:10
+-El Minerale.3800|0:10
+-ReeCheez.11300|0:10
+-SUPER FOOD.24700|000:10
+-Cola Coca.5000|0:10
+-Deez Peas.12300|0:10
+-GiGaGlizzy.12400|0:10
 '''
 DEFAULT_PRODUCT_STOCK = 5 # THIS IS TO SET THE DEFAULT STOCK OF EVERY PRODUCT ITEM # TWEAK HERE !
 DEFAULT_MONEY_STOCK = 100 # THIS IS TO SET THE DEFAULT STOCK OF THE PHYSICAL MONEY # TWEAK HERE !
+MAX_IDR_PAYMENT = 200_000 # this prevents customers potentially breaking the vending machine by 
+MAX_SGD_PAYMENT = 100_00 # overflowing the machine's bank "wallet" with absurdly large payments
 # say $1 SGD dollar is Rp.12,800 IDR would be :
 SGD_to_IDR_ratio = 128.0 # 1 SGD cent is 128 IDR # CHANGE THE RATIO HERE !!!!!!!!!!!!!!!!!!!!!!!!
-# ---------------------------------------------------------------------------------------------
+# ------------------------------------------------ THIS IS THE BANK TO STORE THE MACHINE"S CASH
+BANK_IDR = '''
+-Rp.100_000:000000*
+-Rp.50_000:000
+-Rp.20_000:000
+-Rp.10_000:000
+-Rp.5_000:000
+-Rp.2_000:000
+-Rp.1_000:100
+-Rp.500:100
+-Rp.200:100
+-Rp.100:100
+'''
+# Notice SGD is stored in cents to avoid decimals because the machine's processes work best with integers
+BANK_SGD = '''
+-$.100_00:000000*
+-$.50_00:000
+-$.10_00:000
+-$.5_00:000
+-$.2_00:000
+-$.1_00:000
+-$.50:000
+-$.20:100
+-$.10:100
+-$.5:100
+-$.1:100
+'''
+# --------------------------------------------------------------------------------------------- THE BIG_STRING PREPARATOR
 def prepare(big_string):
     lines = 0 # HOW MANY LINES INSIDE big_string this will be one extra for range(end) is exclusive
     longest = 0 # get the longest line
@@ -38,50 +68,12 @@ def prepare(big_string):
             NEW += collect + ('*' * (longest - current_length)) + i if current_length > 0 else ''
             collect = ''
     return NEW, lines, longest
-PRODUCTS, product_count, product_line_length = prepare(PRODUCTS) # product_count stores how many PRODUCTS we have
-print(PRODUCTS)
-# ---------------------------------------------------------------------------------------------
-def count_lines(big_string): # THIS IS TO GIVE COUNT OF HOW MANY ITEMS IN THESE BIG STRINGS
-    j = 0
-    for i in big_string:
-        if i == '\n':
-            j += 1
-    return j
-# product_count will be +1 extra but this can be taken advantage since range(end) is exclusive!
-# next this checks if the product big_string is valid or not... this is just in case we made an error
-if (len(PRODUCTS) - product_count) % product_line_length != 0 :
-    float("CAUTION !!! THE PRODUCT big_string IS INVALID !!!")
-# ------------------------------------------------ THIS IS THE BANK TO STORE THE MACHINE"S CASH
-BANK_IDR = '''
--Rp.100_000:000**********
--Rp.50_000:000***********
--Rp.20_000:000***********
--Rp.10_000:000***********
--Rp.5_000:000************
--Rp.2_000:000************
--Rp.1_000:100************
--Rp.500:100**************
--Rp.200:100**************
--Rp.100:100**************
-'''
-# Notice SGD is stored in cents to avoid decimals because the machine's processes work best with integers
-BANK_SGD = '''
--$.100_00:000************
--$.50_00:000*************
--$.10_00:000*************
--$.5_00:000**************
--$.2_00:000**************
--$.1_00:000**************
--$.50:000****************
--$.20:100****************
--$.10:100****************
--$.5:100*****************
--$.1:100*****************
-'''
-IDR_line_length = 25
-SGD_line_length = 25
-idr_count = count_lines(BANK_IDR) # stores how many IDR banknotes we gonna use
-sgd_count = count_lines(BANK_SGD) # stores how many SGD banknotes we gonna use
+# These prepare the significant data for all big_strings
+PRODUCTS, product_count, product_line_length = prepare(PRODUCTS)
+BANK_IDR, idr_count, IDR_line_length = prepare(BANK_IDR)
+BANK_SGD, sgd_count, SGD_line_length = prepare(BANK_SGD)
+
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET ANY LINE FROM A BIG STRING
 def get_line(line, big_string, big_length):
     data_buffer = '' # to store each character
@@ -170,9 +162,6 @@ for i in range(1, sgd_count):
     sgd_initial += int(read_data(line, '.', ':')) * DEFAULT_MONEY_STOCK
     NEW += write_data(line, SGD_line_length, ':', DEFAULT_MONEY_STOCK, '*')
 BANK_SGD = NEW # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REPLACE the manually set bank stocks with the NEW bank stocks set to default
-# print(PRODUCTS)
-# print(BANK_IDR)
-# print(BANK_SGD)
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> FORMAT INTEGER PRICES INTO READY PRINT STRING
@@ -265,7 +254,12 @@ def charge_payment(choice):
         # At this point pay can be safely converted to int for IDR or SGD dollars as float into cents as int
         pay = int(pay) if text == 'IDR' else int(float(pay) * 100.0)
         # that int() will truncate any decimal point value !
-        
+        max_allowed_pay_sum = MAX_IDR_PAYMENT if text == 'IDR' else MAX_SGD_PAYMENT
+        if pay > max_allowed_pay_sum:
+            if retry_purchase(f"Sorry, your payment exceeds the maximum of {max_allowed_pay_sum}"):
+                continue # if the user agreed to retry, RESTART this while loop !
+            else:
+                return 0, '', True, 0 # Exit function and tell payment was cancelled !
         # check if its enough to pay the bills lmao
         bill = billing_IDR if text == 'IDR' else billing_SGD
         if pay >= bill: # if payment is enough to pay the bill
@@ -277,7 +271,7 @@ def charge_payment(choice):
             smallest = int(read_data(get_line(last_line, selected_bank, line_length), '.', ':'))
             if pay % smallest != 0:
                 if retry_purchase(f"{pay} is not representable by the smallest banknote value of {smallest}"):
-                    continue
+                    continue # if the user agreed to retry, RESTART this while loop !
                 else:
                     return 0, '', True, 0 # Exit function and tell payment was cancelled !
 
@@ -382,21 +376,25 @@ while True:
     BANK_IDR = accounting(payment, currency_type, False, 'Your Payment') if currency_type == 'IDR' else BANK_IDR
     BANK_SGD = accounting(payment, currency_type, False, 'Your Payment') if currency_type == 'SGD' else BANK_SGD
 
-    # check first if the machine has enough bank_notes to give change
-    can_return, left_over_change = can_return_change(change, currency_type)
+    # only give change if there is chage to give
+    if change > 0:
+        # check first if the machine has enough bank_notes to give change
+        can_return, left_over_change = can_return_change(change, currency_type)
 
-    if can_return:
-        # reuse the accounting's refund mode to return the change
-        BANK_IDR = accounting(change, currency_type, True, "Here's your change") if currency_type == 'IDR' else BANK_IDR
-        BANK_SGD = accounting(change, currency_type, True, "Here's your change") if currency_type == 'SGD' else BANK_SGD
+        if can_return:
+            # reuse the accounting's refund mode to return the change
+            BANK_IDR = accounting(change, currency_type, True, "Here's your change") if currency_type == 'IDR' else BANK_IDR
+            BANK_SGD = accounting(change, currency_type, True, "Here's your change") if currency_type == 'SGD' else BANK_SGD
+        else:
+            # use refund mode to well.. refund the payment money
+            BANK_IDR = accounting(payment, currency_type, True, "REFUND") if currency_type == 'IDR' else BANK_IDR
+            BANK_SGD = accounting(payment, currency_type, True, "REFUND") if currency_type == 'SGD' else BANK_SGD
+            print('\n\nUnfortunately we ran out of bank notes to give the change :(')
+            print(f'<!> Cant return {print_price(left_over_change, currency_type)}')
+            print('Sorry for the inconvenience, Please contact our operator to restock\nExact payment can still be done !\n')
+            continue # RESTART THE MAIN LOOP
     else:
-        # use refund mode to well.. refund the payment money
-        BANK_IDR = accounting(payment, currency_type, True, "REFUND") if currency_type == 'IDR' else BANK_IDR
-        BANK_SGD = accounting(payment, currency_type, True, "REFUND") if currency_type == 'SGD' else BANK_SGD
-        print('\n\nUnfortunately we ran out of bank notes to give the change :(')
-        print(f'<!> Cant return {print_price(left_over_change, currency_type)}')
-        print('Sorry for the inconvenience, Please contact our operator to restock\nExact payment can still be done !\n')
-        continue # RESTART THE MAIN LOOP
+        print("That's exact payment, Thank you !")
 
     # AT THIS POINT, PAYMENT IS COMPLETE SO GIVE THE CUSTOMER THE PRODUCT
     PRODUCTS = take_out(choice) # decrease the chosen product's stock

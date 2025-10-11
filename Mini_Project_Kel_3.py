@@ -8,6 +8,7 @@ PRODUCTS = '''
 -SUPER FOOD.24700|0:10***
 -Cola Coca.5000|0:10*****
 -Deez Peas.12300|0:10****
+-GiGaGlizzy.12400|0:10***
 '''
 DEFAULT_PRODUCT_STOCK = 5 # THIS IS TO SET THE DEFAULT STOCK OF EVERY PRODUCT ITEM # TWEAK HERE !
 DEFAULT_MONEY_STOCK = 100 # THIS IS TO SET THE DEFAULT STOCK OF THE PHYSICAL MONEY # TWEAK HERE !
@@ -121,7 +122,7 @@ for i in range(1, product_count):
     IDR_value = float(read_data(get_line(i, PRODUCTS), '.', '|'))
     SGD_value = round(IDR_value / SGD_to_IDR_ratio)
     # write the SGD_value as the new data to update PRODUCTS
-    # NEW += write_data(get_line(i, PRODUCTS), '|', SGD_value, ':') # >>>>>>>>>>>>> SWAP WITH THIS AND GET RID BELOW TO ENABLE MANUALLY SETTING THE STOCK
+    # NEW += write_data(get_line(i, PRODUCTS), '|', SGD_value, ':') # >>>>>>>>>>>>>>>>>>>> SWAP WITH THIS AND GET RID BELOW TO ENABLE MANUALLY SETTING THE STOCK
     defined_sgd = write_data(get_line(i, PRODUCTS), '|', SGD_value, ':')
     # with the defined SGD now write the default product stock
     NEW += write_data(defined_sgd, ':', DEFAULT_PRODUCT_STOCK,'*')
@@ -153,7 +154,7 @@ def print_price(value, currency):
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PRINT THE MENU FOR THE USER TO SEE
-def display_menu(): # CHIARA
+def display_menu():
     print("\n\n_-*_-*< Vending Machine >*-_*-_")
     for i in range(1, product_count):
         product = get_line(i, PRODUCTS) # get the line of the product !
@@ -193,23 +194,6 @@ def get_choice(): # WILSON
         # invalid inputs will just cause the while loop to continue again and repeat asking for proper input
 
 
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUM UP THE PRICES
-def calc_billings(choices_):
-    store_digits = ''
-    IDR_total = 0
-    SGD_total = 0
-    for i in choices_: # go through each choices string
-        if i != '.': # if i is not a '.' which is the separator
-            store_digits += i # store first before being converted
-        # when i is the separator
-        else :
-            choice = int(store_digits) # convert the stored digits
-            IDR_total += int(read_data(get_line(choice, PRODUCTS), '.', '|')) # add the IDR prices
-            SGD_total += int(read_data(get_line(choice, PRODUCTS), '|', ':')) # add the SGD prices
-            store_digits = '' # RESET after it finished scoring
-    return IDR_total, SGD_total
-
-
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> HELPING FUNCTION to prompt user to restart
 def retry_purchase(error_message):
     print(f'<!> {error_message}')
@@ -223,7 +207,7 @@ def charge_payment(choice):
     str_idr = print_price(billing_IDR, 'IDR')
     str_sgd = print_price(billing_SGD, 'SGD')
     # Tell the user how much they have to pay
-    print(f"That will cost you :\n{str_idr} IDR or {str_sgd} SGD")
+    print(f"{name} will cost you :\n{str_idr} IDR or {str_sgd} SGD")
 
     # payment checking
     while True:
@@ -456,6 +440,20 @@ print(f"PROFIT REPORT : IDR {print_price(idr_profit, 'IDR')} | SGD {print_price(
 #             PRODUCTS_COPY = new # This is an example of the downsides of this big string mechanism ...
 #             print(PRODUCTS_COPY)
 #             store_digits = '' # RESET after it finished scoring
-    
 
 #     return PRODUCTS_COPY # NEW is not a 
+# # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SUM UP THE PRICES
+# def calc_billings(choices_):
+#     store_digits = ''
+#     IDR_total = 0
+#     SGD_total = 0
+#     for i in choices_: # go through each choices string
+#         if i != '.': # if i is not a '.' which is the separator
+#             store_digits += i # store first before being converted
+#         # when i is the separator
+#         else :
+#             choice = int(store_digits) # convert the stored digits
+#             IDR_total += int(read_data(get_line(choice, PRODUCTS), '.', '|')) # add the IDR prices
+#             SGD_total += int(read_data(get_line(choice, PRODUCTS), '|', ':')) # add the SGD prices
+#             store_digits = '' # RESET after it finished scoring
+#     return IDR_total, SGD_total

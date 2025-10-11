@@ -12,6 +12,8 @@ PRODUCTS = '''
 '''
 DEFAULT_PRODUCT_STOCK = 5 # THIS IS TO SET THE DEFAULT STOCK OF EVERY PRODUCT ITEM # TWEAK HERE !
 DEFAULT_MONEY_STOCK = 100 # THIS IS TO SET THE DEFAULT STOCK OF THE PHYSICAL MONEY # TWEAK HERE !
+max_idr_payment = 100_000.0 # This is to prevent customers giving absurd amounts of money
+max_sgd_payment = 100_00.0 # which can overflow and break the program disrupting business
 # say $1 SGD dollar is Rp.12,800 IDR would be :
 SGD_to_IDR_ratio = 128.0 # 1 SGD cent is 128 IDR # CHANGE THE RATIO HERE !!!!!!!!!!!!!!!!!!!!!!!!
 # ---------------------------------------------------------------------------------------------
@@ -239,6 +241,14 @@ def charge_payment(choice):
         pay = int(pay) if text == 'IDR' else int(float(pay) * 100.0)
         # that int() will truncate any decimal point value !
         
+        # make sure the user doesn't pay an absurdly large sum of money
+        max_pay_sum = max_idr_payment if text == 'IDR' else max_sgd_payment
+        if pay > max_pay_sum:
+            if retry_purchase(f"Your payment exceeds the maximum of {print_price(max_pay_sum, text)}"):
+                continue # if the user agreed to retry, RESTART this while loop !
+            else:
+                return 0, '', True, 0 # Exit function and tell payment was cancelled !
+
         # check if its enough to pay the bills lmao
         bill = billing_IDR if text == 'IDR' else billing_SGD
         if pay >= bill: # if payment is enough to pay the bill
@@ -249,7 +259,7 @@ def charge_payment(choice):
             smallest = int(read_data(get_line(last_line, selected_bank), '.', ':'))
             if pay % smallest != 0:
                 if retry_purchase(f"{pay} is not representable by the smallest banknote value of {smallest}"):
-                    continue
+                    continue # if the user agreed to retry, RESTART this while loop !
                 else:
                     return 0, '', True, 0 # Exit function and tell payment was cancelled !
 
@@ -353,21 +363,25 @@ while True:
     BANK_IDR = accounting(payment, currency_type, False, 'Your Payment') if currency_type == 'IDR' else BANK_IDR
     BANK_SGD = accounting(payment, currency_type, False, 'Your Payment') if currency_type == 'SGD' else BANK_SGD
 
-    # check first if the machine has enough bank_notes to give change
-    can_return, left_over_change = can_return_change(change, currency_type)
+    # only give change if there IS change to give
+    if change > 0:
+        # check first if the machine has enough bank_notes to give change
+        can_return, left_over_change = can_return_change(change, currency_type)
 
-    if can_return:
-        # reuse the accounting's refund mode to return the change
-        BANK_IDR = accounting(change, currency_type, True, "Here's your change") if currency_type == 'IDR' else BANK_IDR
-        BANK_SGD = accounting(change, currency_type, True, "Here's your change") if currency_type == 'SGD' else BANK_SGD
+        if can_return:
+            # reuse the accounting's refund mode to return the change
+            BANK_IDR = accounting(change, currency_type, True, "Here's your change") if currency_type == 'IDR' else BANK_IDR
+            BANK_SGD = accounting(change, currency_type, True, "Here's your change") if currency_type == 'SGD' else BANK_SGD
+        else:
+            # use refund mode to well.. refund the payment money
+            BANK_IDR = accounting(payment, currency_type, True, "REFUND") if currency_type == 'IDR' else BANK_IDR
+            BANK_SGD = accounting(payment, currency_type, True, "REFUND") if currency_type == 'SGD' else BANK_SGD
+            print('\n\nUnfortunately we ran out of bank notes to give the change :(')
+            print(f'<!> Cant return {print_price(left_over_change, currency_type)}')
+            print('Sorry for the inconvenience, Please contact our operator to restock\nExact payment can still be done !\n')
+            continue # RESTART THE MAIN LOOP
     else:
-        # use refund mode to well.. refund the payment money
-        BANK_IDR = accounting(payment, currency_type, True, "REFUND") if currency_type == 'IDR' else BANK_IDR
-        BANK_SGD = accounting(payment, currency_type, True, "REFUND") if currency_type == 'SGD' else BANK_SGD
-        print('\n\nUnfortunately we ran out of bank notes to give the change :(')
-        print(f'<!> Cant return {print_price(left_over_change, currency_type)}')
-        print('Sorry for the inconvenience, Please contact our operator to restock\nExact payment can still be done !\n')
-        continue # RESTART THE MAIN LOOP
+        print("That's exact payment, Thank you !")
 
     # AT THIS POINT, PAYMENT IS COMPLETE SO GIVE THE CUSTOMER THE PRODUCT
     PRODUCTS = take_out(choice) # decrease the chosen product's stock

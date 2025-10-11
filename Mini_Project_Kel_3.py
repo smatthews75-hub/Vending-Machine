@@ -1,6 +1,13 @@
-# This is the big_string of PRODUCTS, Weird but it has to be a fixed length,
-# each row must be product_line_length characters long, ended with \n, this is to enable line jumping reliably
-#.-.-.-.-.-.-.-.-.-.-.-.! <- EACH LINE MUST BE THIS LONG EXACTLY !!! USE "*" as filler
+# THIS IS AN UPGRADED VERSION OF THE VENDING MACHINE
+# NEW FEATURES INCLUDE THE BIG_STRINGS NO LONGER NEED TO BE FIXED LENGTH
+# THE CODE WILL RECONFIGURE ITSELF TO MATCH THE LONGEST PRODUCT LINE !!!
+
+# The longest line doesn't have to be at the top but do note that the longest
+# line needs to give space for variables that will be auto written later like
+# DEFAULT_PRODUCT_STOCK, DEFAULT_MONEY_STOCK when written can overflow if the
+# longest line doesn't have enough space to fit that written data.
+
+# lastly, longest lines must have a '*' at the end to serve as clear mark of being the longest
 PRODUCTS = '''
 -MAXIMALLY LONG-NAMED PRODUCT.200000|00000:100*
 -Chatito.10500|0:10
@@ -17,7 +24,9 @@ MAX_IDR_PAYMENT = 200_000 # this prevents customers potentially breaking the ven
 MAX_SGD_PAYMENT = 100_00 # overflowing the machine's bank "wallet" with absurdly large payments
 # say $1 SGD dollar is Rp.12,800 IDR would be :
 SGD_to_IDR_ratio = 128.0 # 1 SGD cent is 128 IDR # CHANGE THE RATIO HERE !!!!!!!!!!!!!!!!!!!!!!!!
-# ------------------------------------------------ THIS IS THE BANK TO STORE THE MACHINE"S CASH
+# ------------------------------------------------ THIS IS THE BANK TO STORE THE MACHINE"S CASH!
+# longest lines in these banks need to have enough space to store how much banknotes the machine 
+# will have at the end of the day... otherwise it will overflow its length and break the program
 BANK_IDR = '''
 -Rp.100_000:000000*
 -Rp.50_000:000
